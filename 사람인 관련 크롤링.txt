@@ -1,0 +1,50 @@
+import requests as req
+from bs4 import BeautifulSoup
+import pprint as ppr
+import operator
+import matplotlib.pyplot as plt
+from matplotlib import font_manager, rc
+
+#__________________________________________________________________________________
+def main():
+    font_name = font_manager.FontProperties(fname='C:/Windows/Fonts/malgun.ttf').get_name()
+    rc('font', family = font_name)
+
+    informationTech = {} # type of dictionary
+    search = "IOT"
+    params = {
+        "searchword": search
+    }
+    for page in range(1, 38):
+        print ("{} 페이지 처리중... ".format(page))
+        url = "http://www.saramin.co.kr/zf_user/search/recruit/page/{}?".format(page)
+        url = req.get(url= url, params= params)
+        if url.status_code == 200:
+            url = BeautifulSoup(url.text, "html.parser")
+            KW = url.find_all("p", {'class':'keywordline'})
+            company_name = url.select("#content > div.content_wrap > div > section > div.in_area > ul > li > div > div > h2 > a > span")
+            for i in zip(company_name, KW):
+                #print ("회사 : {}".format(i[0].string))
+                for j in i[1].select("span > a"):
+                    #print (j.string)
+                    if j.string not in informationTech.keys():
+                        informationTech[j.string] = 1
+                    else:
+                        informationTech[j.string] += 1
+
+
+    informationTech = sorted(informationTech.items(),
+                             key=operator.itemgetter(1),
+                             reverse=True)
+    #ppr.pprint (informationTech)
+
+    label_ = [ x[0] for x in informationTech[:20]]
+    value_ = [ x[1] for x in informationTech[:20]]
+
+    plt.barh(label_, value_)
+    plt.title(search)
+    plt.xticks(rotation=90)
+    plt.savefig(search+'.png')
+    plt.show()
+if __name__ == "__main__":
+    main()
